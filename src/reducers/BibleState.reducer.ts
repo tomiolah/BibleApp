@@ -1,18 +1,18 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { Bible } from "../types/apiTypes";
 import { BibleReference, BibleStateType } from "../types/reduxTypes";
+import { LocalBiblesListItem } from "../util/offlinePersistence";
 
 export const initialState: BibleStateType = {
-  currentBible: null,
-  currentRef: null,
+  currentBible: undefined,
+  currentRef: undefined,
 };
 
 const BibleSlice = createSlice({
   name: 'BibleState',
   initialState,
   reducers: {
-    setBible(state, action: PayloadAction<Bible>) {
-      state.currentRef = null;
+    setBible(state, action: PayloadAction<LocalBiblesListItem>) {
+      state.currentRef = undefined;
       state.currentBible = action.payload;
     },
     setRef(state, action: PayloadAction<BibleReference>) {

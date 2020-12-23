@@ -10,17 +10,18 @@ import VersePicker from '../components/VersePicker';
 import { BibleStateType, State } from '../types/reduxTypes';
 import BaseView from './BaseView';
 import useAsyncData from '../hooks/useAsyncData';
-import { localBibles } from '../util/offlinePersistence';
+import { loadBible, localBibles } from '../util/offlinePersistence';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Navigator(props: DrawerContentComponentProps) {
+  const darkTheme = useSelector<State, boolean>(state => state.config.darkTheme);
   const BibleState = useSelector<State, BibleStateType>(state => state.BibleState);
-  const isOk = React.useMemo(() => !!BibleState.currentBible && !!BibleState.currentRef, [BibleState]);
   const availableTranslations = useAsyncData(localBibles());
-  const currentBible = React.useMemo(() => BibleState.currentBible, [BibleState]);
+  const currentBible = useAsyncData(loadBible(BibleState.currentBible?.uuid ?? ''), [BibleState]);
   const currentTranslationBooks = React.useMemo(() => currentBible?.books ?? [], [currentBible]);
 
-  const [currentTranslation, innerSetCurrentTranslation] = React.useState<string | null>(BibleState.currentBible?.uuid ?? null);
-  const [currentBookName, innerSetCurrentBookName] = React.useState<string | null>(BibleState.currentRef?.book ?? null);
+  const [currentTranslation, innerSetCurrentTranslation] = React.useState<string | undefined>(BibleState.currentBible?.uuid ?? undefined);
+  const [currentBookName, innerSetCurrentBookName] = React.useState<string | undefined>(BibleState.currentRef?.book ?? undefined);
   const currentBook = React.useMemo(() =>
     currentTranslationBooks.find(v => v.title === currentBookName),
     [currentTranslationBooks, currentBookName]
@@ -33,19 +34,21 @@ export default function Navigator(props: DrawerContentComponentProps) {
   const [currentVerseIndex, setCurrentVerseIndex] = React.useState<number>(BibleState.currentRef?.verseIndex ?? 0);
   const [ready, setReady] = React.useState<boolean>(!!currentBible);
 
+  React.useEffect(() => setReady(!!currentBible), [currentBible]);
+
   const setCurrentChapterIndex = React.useCallback((chapter: number) => {
-    setCurrentVerseIndex(0);
     innerSetCurrentChapterIndex(chapter);
+    setCurrentVerseIndex(0);
   }, [innerSetCurrentChapterIndex, setCurrentVerseIndex]);
 
-  const setCurrentBookName = React.useCallback((name: string | null) => {
-    setCurrentChapterIndex(0);
+  const setCurrentBookName = React.useCallback((name: string | undefined) => {
     innerSetCurrentBookName(name);
+    setCurrentChapterIndex(0);
   }, [innerSetCurrentBookName, setCurrentChapterIndex, setCurrentVerseIndex]);
 
   const setCurrentTranslation = React.useCallback((uuid: string) => {
-    setCurrentBookName(null);
     innerSetCurrentTranslation(uuid);
+    setCurrentBookName(undefined);
   }, [innerSetCurrentTranslation, setCurrentBookName]);
 
   return (
@@ -84,9 +87,13 @@ export default function Navigator(props: DrawerContentComponentProps) {
         {(!!currentTranslation && !!currentBookName) && <Button buttonStyle={{
           padding: 20,
           marginTop: 10,
-        }} titleStyle={{
+        }} type={darkTheme ? 'outline' : 'solid'} titleStyle={{
           fontSize: 20,
-        }} title="GO" onPress={() => props.navigation.jumpTo('Bible reader')} />}
+        }} title="GO" onPress={() => {
+          if (currentChapter) {
+            props.navigation.jumpTo('Bible reader')
+          }
+        }} />}
       </View>
     </BaseView>
   );

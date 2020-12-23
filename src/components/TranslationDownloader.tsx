@@ -1,43 +1,41 @@
 import * as React from 'react';
 import { View, ActivityIndicator } from 'react-native';
-import { CheckBox, Button, Text } from 'react-native-elements';
+import { CheckBox, Button, Text, colors, Icon } from 'react-native-elements';
 import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { getBible, getBibleTranslationsList } from '../util/api';
 import { BibleTranslation } from '../types/apiTypes';
 import { localBibles, removeBible, saveBible } from '../util/offlinePersistence';
 import useAsyncData from '../hooks/useAsyncData';
+import { useSelector } from 'react-redux';
+import { State } from '../types/reduxTypes';
 
 type TranslationListItemProps = BibleTranslation & {
   index: number;
   isLocal: boolean;
   isLoading: boolean;
+  isSelected: boolean;
   refreshLocalBiblesList(): void;
 };
 
 const TranslationListItem = (props: TranslationListItemProps) => {
-  React.useEffect(() => {
-    console.log(`${props.index} - ${props.isLoading}`);
-  }, [props.isLoading]);
+  const darkTheme = useSelector<State, boolean>(state => state.config.darkTheme);
   return (
     <View style={{ marginLeft: 20, flex: 1, flexDirection: 'row' }}>
-      <Text>{`${props.name} (${props.shortName})`}</Text>
-      {props.isLocal && (<Button icon={{
-        name: 'delete',
-        color: '#c21919',
-        size: 25,
-      }} type="clear" buttonStyle={{
-        padding: 0,
-      }} onPress={() => {
-        removeBible(props.uuid).then(() =>
-          props.refreshLocalBiblesList()
-        );
-      }} />)}
+      <Text style={{
+        fontSize: 18,
+        color: darkTheme ? (props.isLocal ? 'grey' : (
+           props.isSelected ? colors.primary : 'white'
+        )) : (props.isLocal ? 'grey' : (
+           props.isSelected ? colors.primary : 'black'
+        )),
+      }}>{`${props.name} (${props.shortName})`}</Text>
       {props.isLoading && (<ActivityIndicator />)}  
     </View>
   );
 }
 
 export default function TranslationDownloader({ navigation }: DrawerContentComponentProps) {
+  const darkTheme = useSelector<State, boolean>(state => state.config.darkTheme);
   const translations = useAsyncData(getBibleTranslationsList().then(t => {
     setIsLoading(false);
     return t;
@@ -58,6 +56,7 @@ export default function TranslationDownloader({ navigation }: DrawerContentCompo
         title={(<TranslationListItem {...{
           index,
           ...translation,
+          isSelected: selectedTranslations.includes(translation.uuid),
           isLocal: localBiblesList.includes(translation.uuid),
           isLoading: isLoading && (
             !localBiblesList.includes(translation.uuid) &&
@@ -67,6 +66,22 @@ export default function TranslationDownloader({ navigation }: DrawerContentCompo
         }} />)}
         checked={selectedTranslations.includes(translation.uuid) || localBiblesList.includes(translation.uuid)}
         checkedColor={localBiblesList.includes(translation.uuid) ? 'grey' : undefined}
+        checkedIcon={localBiblesList.includes(translation.uuid) ? (
+          <Icon containerStyle={{
+            height: '100%',
+            marginLeft: -5,
+            marginTop: -4,
+            marginBottom: 2,
+          }} style={{
+          }} size={30} name="delete" type="antdesign"
+            color="#c21919"
+            onPress={() => {
+            removeBible(translation.uuid).then(() =>
+              localBibles().then(l => setLocalBiblesList(l.map(v => v.uuid)))
+            );
+          }} />
+        ) : undefined}
+        uncheckedColor={darkTheme ? 'white' : 'black'}
         onPress={() => {
           if (!localBiblesList.includes(translation.uuid)) {
             if (!selectedTranslations.includes(translation.uuid)) {
@@ -93,9 +108,9 @@ export default function TranslationDownloader({ navigation }: DrawerContentCompo
           }} title="  DOWNLOAD" icon={{
             name: 'cloud-download-outline',
             type: 'ionicon',
-            color: 'white',
+            color: darkTheme ? colors.primary : 'white',
             size: 30,
-          }} onPress={() => {
+          }} type={darkTheme ? 'outline' : 'solid'} onPress={() => {
             setIsLoading(true);
             Promise.all(selectedTranslations.map(async (t) => {
               try {
@@ -108,9 +123,9 @@ export default function TranslationDownloader({ navigation }: DrawerContentCompo
                 console.error(err);
                 return false;
               }
-            })).then(() => {
-              setIsLoading(false);
+            })).finally(() => {
               setSelectedTranslations([]);
+              setIsLoading(false);
             });
           }} />
         )}
@@ -118,7 +133,7 @@ export default function TranslationDownloader({ navigation }: DrawerContentCompo
           <Button buttonStyle={{
             margin: 10,
             height: 50,
-          }} title="DONE" onPress={() => navigation.jumpTo('Navigator')} />
+          }} title="DONE" type={darkTheme ? 'outline' : 'solid'} onPress={() => navigation.jumpTo('Navigator')} />
         )}
       </View>
   </View> 

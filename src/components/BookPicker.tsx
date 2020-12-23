@@ -7,7 +7,7 @@ import { Book } from '../types/apiTypes';
 
 type BookPickerProps = {
   currentTranslationBooks: Book[],
-  currentBook: string | null,
+  currentBook: string | undefined,
   setCurrentBook(book: string): void;
 };
 
@@ -26,6 +26,7 @@ export default function BookPicker(props: BookPickerProps) {
           borderColor: 'grey',
           borderWidth: 1,
           borderRadius: 5,
+          backgroundColor: 'white',
         }}
       >
         <Picker

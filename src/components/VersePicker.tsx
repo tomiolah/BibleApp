@@ -1,9 +1,10 @@
 import * as React from 'react';
 import { Picker, View } from 'react-native';
 import { Text } from 'react-native-elements';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { BibleStateActions } from '../reducers/BibleState.reducer';
 import { Chapter } from '../types/apiTypes';
+import { State } from '../types/reduxTypes';
 
 type VersePickerProps = {
   currentChapter: Chapter | null;
@@ -27,6 +28,7 @@ export default function VersePicker(props: VersePickerProps) {
           borderColor: 'grey',
           borderWidth: 1,
           borderRadius: 5,
+          backgroundColor: 'white',
         }}
       >
         <Picker

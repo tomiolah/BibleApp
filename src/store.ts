@@ -3,12 +3,16 @@ import * as React from "react";
 import BibleStateReducer, {
   initialState as BibleInit,
 } from "./reducers/BibleState.reducer";
+import UserConfigReducer, {
+  initialState as UserConfigInit,
+} from "./reducers/UserConfig.reducer";
 import { State } from "./types/reduxTypes";
 import { loadState, saveStateAsJSON } from "./util/offlinePersistence";
 import { init as initFS } from './util/offlinePersistence';
 
 export const initialState = {
   BibleState: BibleInit,
+  config: UserConfigInit,
 };
 
 const useAsyncStore = () => {
@@ -18,10 +22,10 @@ const useAsyncStore = () => {
       .then(() => loadState().then(
           (initialState) => {
             const newStore = configureStore({
-              reducer: { BibleState: BibleStateReducer },
+              reducer: { BibleState: BibleStateReducer, config: UserConfigReducer },
               preloadedState: initialState,
             });
-            newStore.subscribe(() => saveStateAsJSON(newStore.getState()));
+            newStore.subscribe(async () => await saveStateAsJSON(newStore.getState()));
             setStore(newStore);
           }
         )

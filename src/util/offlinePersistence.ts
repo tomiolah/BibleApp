@@ -36,13 +36,13 @@ export const localBibles = async (): Promise<LocalBiblesListItem[]> => {
   return JSON.parse(localBibles) as LocalBiblesListItem[];
 }
 
-export const loadBible = async (uuid: string): Promise<Bible | null> => {
+export const loadBible = async (uuid: string): Promise<Bible | undefined> => {
   const localBibles = JSON.parse(await FileSystem.readAsStringAsync(BIBLE_LIST_FILE)) as LocalBiblesListItem[];
   if (localBibles.map(v => v.uuid).includes(uuid)) {
     const loadedBible = await FileSystem.readAsStringAsync(BIBLE_DIRECTORY(uuid));
     return JSON.parse(loadedBible) as Bible;
   }
-  return null;
+  return undefined;
 }
 
 export async function init() {
@@ -63,13 +63,13 @@ export async function init() {
 }
 
 type PersistedStateType = {
-  currentBibleUUID: string | null;
-  currentBibleReference: BibleReference | null;
+  currentBibleUUID: string | undefined;
+  currentBibleReference: BibleReference | undefined;
 };
 
 export async function saveStateAsJSON(state: State) {
   const persistedState: PersistedStateType = {
-    currentBibleUUID: state.BibleState.currentBible?.uuid ?? null,
+    currentBibleUUID: state.BibleState.currentBible?.uuid ?? undefined,
     currentBibleReference: state.BibleState.currentRef,
   };
   await FileSystem.writeAsStringAsync(STATE_FILE, JSON.stringify(persistedState));
@@ -81,11 +81,15 @@ export async function loadState(): Promise<State> {
   const keys = Object.keys(persistedState);
   let loadedState: State = {
     BibleState: {
-      currentBible: null,
-      currentRef: null,
-    }
+      currentBible: undefined,
+      currentRef: undefined,
+    },
+    config: {
+      oneVersePerLine: true,
+      darkTheme: false,
+    },
   };
-  if (keys.includes('currentBibleUUID') && keys.includes('currentBibleReference')) {
+  if (keys.includes('currentBibleUUID') && keys.includes('currentBibleReference') && keys.includes('config')) {
     const state = persistedState as PersistedStateType;
     if (state.currentBibleUUID) {
       loadedState.BibleState.currentBible = await loadBible(state.currentBibleUUID);

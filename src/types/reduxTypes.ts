@@ -1,16 +1,22 @@
-import { Bible } from "./apiTypes";
+import { LocalBiblesListItem } from "../util/offlinePersistence";
 
 export type State = {
   BibleState: BibleStateType;
+  config: UserConfiguration;
 };
 
 export type BibleReference = {
   book: string;
   chapterIndex: number;
-  verseIndex: number | null;
+  verseIndex: number | undefined;
 };
 
 export type BibleStateType = {
-  currentBible: Bible | null;
-  currentRef: BibleReference | null;
+  currentBible: LocalBiblesListItem | undefined;
+  currentRef: BibleReference | undefined;
 };
+
+export type UserConfiguration = {
+  oneVersePerLine: boolean;
+  darkTheme: boolean;
+}
