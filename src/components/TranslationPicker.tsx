@@ -1,22 +1,21 @@
 import * as React from 'react';
-import { ActivityIndicator, Picker, View } from 'react-native';
+import { useDispatch } from 'react-redux';
+import { Picker, View } from 'react-native';
 import { Text } from 'react-native-elements';
-import { useDispatch, useSelector } from 'react-redux';
 import { BibleStateActions } from '../reducers/BibleState.reducer';
-import { State } from '../types/reduxTypes';
-import { loadBible, localBibles, LocalBiblesListItem } from '../util/offlinePersistence';
+import { loadBible, LocalBiblesListItem } from '../util/offlinePersistence';
 
-export default function TranslationPicker() {
-  const [availableTranslations, setAvailableTranslations] = React.useState<LocalBiblesListItem[] | undefined>(undefined);
-  const stateTranslation = useSelector<State, string>(state => state.BibleState.currentBible?.uuid ?? '');
-  const [selectedValue, setSelectedValue] = React.useState<string>(stateTranslation);
+type TranslationPickerProps = {
+  availableTranslations: LocalBiblesListItem[];
+  currentTranslation: string | null;
+  setCurrentTranslation(uuid: string): void;
+  setReady(value: boolean): void;
+};
+
+export default function TranslationPicker(props: TranslationPickerProps) {
   const dispatch = useDispatch();
 
-  React.useEffect(() => {
-    localBibles().then(list => setAvailableTranslations(list));
-  }, [])
-
-  return availableTranslations ? (
+  return (
     <View>
       <Text style={{
         color: 'grey',
@@ -34,22 +33,22 @@ export default function TranslationPicker() {
           itemStyle={{
             fontSize: 20,
           }}
-          selectedValue={selectedValue}
+          selectedValue={props.currentTranslation}
           onValueChange={async (itemValue) => {
-            setSelectedValue(itemValue);
+            props.setReady(false);
+            props.setCurrentTranslation(itemValue);
             const bible = await loadBible(itemValue);
             if (bible) {
               dispatch(BibleStateActions.setBible(bible));
+              props.setReady(true);
             }
           }}
         >
-          {availableTranslations.map(translation => (
+          {props.availableTranslations.map(translation => (
             <Picker.Item key={translation.uuid} label={`${translation.name} (${translation.shortName})`} value={translation.uuid} />
           ))}
         </Picker>
       </View>
     </View>
-  ) : (
-    <ActivityIndicator />
   );
 }

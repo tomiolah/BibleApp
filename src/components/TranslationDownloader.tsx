@@ -5,16 +5,48 @@ import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { getBible, getBibleTranslationsList } from '../util/api';
 import { BibleTranslation } from '../types/apiTypes';
 import { localBibles, removeBible, saveBible } from '../util/offlinePersistence';
+import useAsyncData from '../hooks/useAsyncData';
+
+type TranslationListItemProps = BibleTranslation & {
+  index: number;
+  isLocal: boolean;
+  isLoading: boolean;
+  refreshLocalBiblesList(): void;
+};
+
+const TranslationListItem = (props: TranslationListItemProps) => {
+  React.useEffect(() => {
+    console.log(`${props.index} - ${props.isLoading}`);
+  }, [props.isLoading]);
+  return (
+    <View style={{ marginLeft: 20, flex: 1, flexDirection: 'row' }}>
+      <Text>{`${props.name} (${props.shortName})`}</Text>
+      {props.isLocal && (<Button icon={{
+        name: 'delete',
+        color: '#c21919',
+        size: 25,
+      }} type="clear" buttonStyle={{
+        padding: 0,
+      }} onPress={() => {
+        removeBible(props.uuid).then(() =>
+          props.refreshLocalBiblesList()
+        );
+      }} />)}
+      {props.isLoading && (<ActivityIndicator />)}  
+    </View>
+  );
+}
 
 export default function TranslationDownloader({ navigation }: DrawerContentComponentProps) {
-  const [translations, setTranslations] = React.useState<
-    BibleTranslation[] | undefined
-  >(undefined);
+  const translations = useAsyncData(getBibleTranslationsList().then(t => {
+    setIsLoading(false);
+    return t;
+  }));
   const [localBiblesList, setLocalBiblesList] = React.useState<string[] | undefined>(undefined)
   const [selectedTranslations, setSelectedTranslations] = React.useState<string[]>([]);
+  const [isLoading, setIsLoading] = React.useState<boolean>(false);
 
   React.useEffect(() => {
-    getBibleTranslationsList().then(t => setTranslations(t));
     localBibles().then(l => setLocalBiblesList(l.map(v => v.uuid)));
   }, []);
 
@@ -23,21 +55,16 @@ export default function TranslationDownloader({ navigation }: DrawerContentCompo
     {translations.map((translation, index) => (
       <CheckBox
         key={index}
-        title={
-          <View style={{ marginLeft: 20, flex: 1, flexDirection: 'row' }}>
-            <Text>{`${translation.name} (${translation.shortName})`}</Text>
-            {localBiblesList.includes(translation.uuid) && (<Button icon={{
-              name: 'delete',
-              color: '#c21919',
-              size: 25,
-            }} type="clear" buttonStyle={{
-              padding: 0,
-            }} onPress={async () => {
-              await removeBible(translation.uuid);
-              setLocalBiblesList(localBiblesList.filter(v => v !== translation.uuid));
-            }} />)}  
-          </View>
-        }
+        title={(<TranslationListItem {...{
+          index,
+          ...translation,
+          isLocal: localBiblesList.includes(translation.uuid),
+          isLoading: isLoading && (
+            !localBiblesList.includes(translation.uuid) &&
+              selectedTranslations.includes(translation.uuid)
+          ), refreshLocalBiblesList: () => 
+            localBibles().then(l => setLocalBiblesList(l.map(v => v.uuid))),
+        }} />)}
         checked={selectedTranslations.includes(translation.uuid) || localBiblesList.includes(translation.uuid)}
         checkedColor={localBiblesList.includes(translation.uuid) ? 'grey' : undefined}
         onPress={() => {
@@ -59,7 +86,7 @@ export default function TranslationDownloader({ navigation }: DrawerContentCompo
       />
     ))}
       <View key="1337">
-        {selectedTranslations.length > 0 && (
+        {selectedTranslations.length > 0 && !isLoading && (
           <Button buttonStyle={{
             margin: 10,
             height: 50,
@@ -69,16 +96,22 @@ export default function TranslationDownloader({ navigation }: DrawerContentCompo
             color: 'white',
             size: 30,
           }} onPress={() => {
-            selectedTranslations.forEach(async (t) => {
+            setIsLoading(true);
+            Promise.all(selectedTranslations.map(async (t) => {
               try {
                 const bible = await getBible(t);
-                const uri = await saveBible(bible);
-                console.log(`Bible ${bible.shortName} saved to ${uri}!`);
-                localBibles().then(l => setLocalBiblesList(l.map(v => v.uuid)));
+                await saveBible(bible);
+                const l = await localBibles();
+                setLocalBiblesList(l.map(v => v.uuid));
+                return true;
               } catch (err) {
                 console.error(err);
+                return false;
               }
-            })
+            })).then(() => {
+              setIsLoading(false);
+              setSelectedTranslations([]);
+            });
           }} />
         )}
         {localBiblesList.length > 0 && (

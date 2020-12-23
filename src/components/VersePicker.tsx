@@ -1,18 +1,18 @@
 import * as React from 'react';
 import { Picker, View } from 'react-native';
 import { Text } from 'react-native-elements';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { BibleStateActions } from '../reducers/BibleState.reducer';
 import { Chapter } from '../types/apiTypes';
-import { State } from '../types/reduxTypes';
 
-export default function VersePicker() {
-  const currentChapter = useSelector<State, Chapter | null>(state => {
-    const currentTranslationBooks = state.BibleState.currentBible?.books ?? [];
-    const currentBook = currentTranslationBooks.find(v => v.title === state.BibleState.currentRef?.book ?? '');
-    return currentBook ? currentBook.chapters[state.BibleState.currentRef?.chapterIndex ?? 0] : null;
-  });
-  const [selectedValue, setSelectedValue] = React.useState<number | null>(currentChapter ? 0 : null);
+type VersePickerProps = {
+  currentChapter: Chapter | null;
+  currentVerseIndex: number;
+  setCurrentVerseIndex(verse: number): void;
+};
+
+export default function VersePicker(props: VersePickerProps) {
+  const currentChapter = props.currentChapter;
   const dispatch = useDispatch();
   
   return currentChapter ? (
@@ -30,9 +30,9 @@ export default function VersePicker() {
         }}
       >
         <Picker
-          selectedValue={selectedValue}
+          selectedValue={props.currentVerseIndex}
           onValueChange={async (itemValue: number) => {
-            setSelectedValue(itemValue);
+            props.setCurrentVerseIndex(itemValue);
             if (itemValue >= 0 && itemValue < currentChapter.verses.length) {
               dispatch(BibleStateActions.setVerse(itemValue));
             }

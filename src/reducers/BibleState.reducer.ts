@@ -12,6 +12,7 @@ const BibleSlice = createSlice({
   initialState,
   reducers: {
     setBible(state, action: PayloadAction<Bible>) {
+      state.currentRef = null;
       state.currentBible = action.payload;
     },
     setRef(state, action: PayloadAction<BibleReference>) {
@@ -21,12 +22,13 @@ const BibleSlice = createSlice({
       state.currentRef = {
         book: action.payload,
         chapterIndex: 0,
-        verseIndex: null,
+        verseIndex: 0,
       }
     },
     setChapter(state, action: PayloadAction<number>) {
       if (state.currentRef) {
         state.currentRef.chapterIndex = action.payload;
+        state.currentRef.verseIndex = 0;
       }
     },
     setVerse(state, action: PayloadAction<number>) {

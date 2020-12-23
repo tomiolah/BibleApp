@@ -1,23 +1,18 @@
 import * as React from 'react';
 import { Picker, View } from 'react-native';
 import { Text } from 'react-native-elements';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { BibleStateActions } from '../reducers/BibleState.reducer';
 import { Book } from '../types/apiTypes';
-import { State } from '../types/reduxTypes';
 
-export default function ChapterPicker() {
-  const currentBook = useSelector<State, Book | undefined>(state => {
-    const currentTranslation = state.BibleState.currentBible;
-    if (currentTranslation) {
-      const currentBookName = state.BibleState.currentRef?.book ?? null;
-      if (currentBookName) {
-        return currentTranslation.books.find(v => v.title === currentBookName);
-      } 
-    }
-    return undefined;
-  })
-  const [selectedValue, setSelectedValue] = React.useState<number | null>(currentBook ? 0 : null);
+type ChapterPickerProps = {
+  currentBook: Book;
+  currentChapter: number;
+  setCurrentChapter(chapter: number): void;
+};
+
+export default function ChapterPicker(props: ChapterPickerProps) {
+  const currentBook = props.currentBook;
   const dispatch = useDispatch();
   
   return currentBook ? (
@@ -35,9 +30,9 @@ export default function ChapterPicker() {
         }}
       >
         <Picker
-          selectedValue={selectedValue}
+          selectedValue={props.currentChapter}
           onValueChange={async (itemValue: number) => {
-            setSelectedValue(itemValue);
+            props.setCurrentChapter(itemValue);
             if (itemValue >= 0 && itemValue < currentBook.chapters.length) {
               dispatch(BibleStateActions.setChapter(itemValue));
             }

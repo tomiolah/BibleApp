@@ -1,18 +1,20 @@
 import * as React from 'react';
 import { View, Picker } from 'react-native';
 import { Text } from 'react-native-elements';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { BibleStateActions } from '../reducers/BibleState.reducer';
 import { Book } from '../types/apiTypes';
-import { State } from '../types/reduxTypes';
 
-export default function BookPicker() {
-  const currentTranslationBooks = useSelector<State, Book[]>(state => state.BibleState.currentBible?.books ?? []);
-  const currentBook = useSelector<State, string | null>(state => state.BibleState.currentRef?.book ?? null);
-  const [selectedValue, setSelectedValue] = React.useState<string | null>(currentBook);
+type BookPickerProps = {
+  currentTranslationBooks: Book[],
+  currentBook: string | null,
+  setCurrentBook(book: string): void;
+};
+
+export default function BookPicker(props: BookPickerProps) {
   const dispatch = useDispatch();
   
-  return currentTranslationBooks.length > 0 ? (
+  return props.currentTranslationBooks.length > 0 ? (
     <View>
       <Text style={{
         color: 'grey',
@@ -27,16 +29,16 @@ export default function BookPicker() {
         }}
       >
         <Picker
-          selectedValue={selectedValue}
+          selectedValue={props.currentBook}
           onValueChange={async (itemValue) => {
-            setSelectedValue(itemValue);
-            const book = currentTranslationBooks.find(v => v.title === itemValue);
+            props.setCurrentBook(itemValue);
+            const book = props.currentTranslationBooks.find(v => v.title === itemValue);
             if (book) {
               dispatch(BibleStateActions.setBook(book.title));
             }
           }}
         >
-          {currentTranslationBooks.map((item) => (
+          {props.currentTranslationBooks.map((item) => (
             <Picker.Item key={item.title} label={item.title} value={item.title} />
           ))}
         </Picker>
