@@ -1,6 +1,6 @@
 import { Bible } from '../types/apiTypes';
 import * as FileSystem from 'expo-file-system';
-import { BibleReference, State } from '../types/reduxTypes';
+import { BibleReference, State, UserConfiguration } from '../types/reduxTypes';
 
 export type LocalBiblesListItem = {
   uuid: string;
@@ -65,12 +65,14 @@ export async function init() {
 type PersistedStateType = {
   currentBibleUUID: string | undefined;
   currentBibleReference: BibleReference | undefined;
+  config: UserConfiguration;
 };
 
 export async function saveStateAsJSON(state: State) {
   const persistedState: PersistedStateType = {
     currentBibleUUID: state.BibleState.currentBible?.uuid ?? undefined,
     currentBibleReference: state.BibleState.currentRef,
+    config: state.config,
   };
   await FileSystem.writeAsStringAsync(STATE_FILE, JSON.stringify(persistedState));
 }
@@ -89,12 +91,13 @@ export async function loadState(): Promise<State> {
       darkTheme: false,
     },
   };
-  if (keys.includes('currentBibleUUID') && keys.includes('currentBibleReference') && keys.includes('config')) {
+  if (['currentBibleUUID', 'currentBibleReference', 'config'].every(v => keys.includes(v))) {
     const state = persistedState as PersistedStateType;
     if (state.currentBibleUUID) {
       loadedState.BibleState.currentBible = await loadBible(state.currentBibleUUID);
     }
     loadedState.BibleState.currentRef = state.currentBibleReference;
+    loadedState.config = state.config;
   }
   return loadedState;
 }
