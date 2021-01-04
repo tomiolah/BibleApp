@@ -1,10 +1,9 @@
 import * as React from 'react';
 import { Picker, View } from 'react-native';
 import { Text } from 'react-native-elements';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { BibleStateActions } from '../reducers/BibleState.reducer';
 import { Book } from '../types/apiTypes';
-import { State } from '../types/reduxTypes';
 
 type ChapterPickerProps = {
   currentBook: Book;

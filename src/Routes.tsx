@@ -9,7 +9,6 @@ import DownloadView from './views/DownloadView';
 import Navigator from './views/Navigator';
 import useAsyncData from './hooks/useAsyncData';
 import Settings from './views/Settings';
-import { colors } from 'react-native-elements';
 
 const Drawer = createDrawerNavigator();
 

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useSelector } from 'react-redux';
-import { View, FlatList, Share, AsyncStorage } from 'react-native';
+import { View, FlatList, Share } from 'react-native';
 import { colors, Icon, Slider, Text} from 'react-native-elements';
 import { FloatingAction } from "react-native-floating-action";
 import { DrawerContentComponentProps } from '@react-navigation/drawer';
@@ -74,18 +74,26 @@ export default function BibleView(props: DrawerContentComponentProps) {
   const darkTheme = useSelector<State, boolean>(state => state.config.darkTheme);
   const reference = useSelector<State, BibleReference | undefined>(state => state.BibleState.currentRef);
   const currentBible = useSelector<State, LocalBiblesListItem | undefined>(state => state.BibleState.currentBible);
-  const currentChapter = useAsyncData(
-    loadBible(currentBible?.uuid ?? '')
-    .then(b => b?.books ?? [])
-    .then(bs => bs.find(v => v.title === reference?.book ?? ''))
-    .then(b => b?.chapters ?? [])
-    .then(cs => {
-      const chapter = reference?.chapterIndex ?? 0;
-      if (chapter >= 0 && chapter < cs.length - 1) {
-        return cs[chapter];
+  const loadedBible = useAsyncData(loadBible(currentBible?.uuid ?? ''), [currentBible]);
+  const currentBook = React.useMemo(() => {
+    console.log(loadedBible?.name);
+    const lbb = loadedBible?.books ?? []
+    if (lbb.length > 0) {
+      return lbb[reference?.book ?? 0];
+    }
+    return undefined;
+    }, [loadedBible]
+  );
+  const currentChapter = React.useMemo(() => {
+      if (currentBook) {
+        const chapters = currentBook.chapters;
+        const chapter = reference?.chapterIndex ?? 0;
+        if (chapter >= 0 && chapter < chapters.length - 1) {
+          return chapters[chapter];
+        }
+        return undefined;
       }
-      return undefined;
-    }), [currentBible, reference]
+    }, [currentBook]
   );
   const oneVersePerLine = useSelector<State, boolean>(state => state.config.oneVersePerLine);
   const [fontSize, setFontSize] = React.useState<number>(16);
@@ -101,8 +109,8 @@ export default function BibleView(props: DrawerContentComponentProps) {
     saveFontSize(fontSize);
   }, [fontSize]);
   
-  return currentChapter && reference && currentBible ? (
-    <BaseView {...props} title={`${reference.book}${reference.chapterIndex + 1}:${(reference?.verseIndex ?? 0) + 1} (${currentBible.shortName})`}>
+  return currentChapter && reference && currentBible && currentBook ? (
+    <BaseView {...props} title={`${currentBook.title}${reference.chapterIndex + 1}:${(reference?.verseIndex ?? 0) + 1} (${currentBible.shortName})`}>
       <View style={{
         flex: 1,
         margin: 10,

@@ -11,7 +11,6 @@ import { BibleStateType, State } from '../types/reduxTypes';
 import BaseView from './BaseView';
 import useAsyncData from '../hooks/useAsyncData';
 import { loadBible, localBibles } from '../util/offlinePersistence';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Navigator(props: DrawerContentComponentProps) {
   const darkTheme = useSelector<State, boolean>(state => state.config.darkTheme);
@@ -21,10 +20,10 @@ export default function Navigator(props: DrawerContentComponentProps) {
   const currentTranslationBooks = React.useMemo(() => currentBible?.books ?? [], [currentBible]);
 
   const [currentTranslation, innerSetCurrentTranslation] = React.useState<string | undefined>(BibleState.currentBible?.uuid ?? undefined);
-  const [currentBookName, innerSetCurrentBookName] = React.useState<string | undefined>(BibleState.currentRef?.book ?? undefined);
+  const [currentBookIndex, innerSetCurrentBookIndex] = React.useState<number>(BibleState.currentRef?.book ?? 0);
   const currentBook = React.useMemo(() =>
-    currentTranslationBooks.find(v => v.title === currentBookName),
-    [currentTranslationBooks, currentBookName]
+    currentTranslationBooks[currentBookIndex],
+    [currentTranslationBooks, currentBookIndex]
   );
   const [currentChapterIndex, innerSetCurrentChapterIndex] = React.useState<number>(BibleState.currentRef?.chapterIndex ?? 0);
   const currentChapter = React.useMemo(() =>
@@ -41,14 +40,13 @@ export default function Navigator(props: DrawerContentComponentProps) {
     setCurrentVerseIndex(0);
   }, [innerSetCurrentChapterIndex, setCurrentVerseIndex]);
 
-  const setCurrentBookName = React.useCallback((name: string | undefined) => {
-    innerSetCurrentBookName(name);
+  const setCurrentBookName = React.useCallback((name: number) => {
+    innerSetCurrentBookIndex(name);
     setCurrentChapterIndex(0);
-  }, [innerSetCurrentBookName, setCurrentChapterIndex, setCurrentVerseIndex]);
+  }, [innerSetCurrentBookIndex, setCurrentChapterIndex, setCurrentVerseIndex]);
 
   const setCurrentTranslation = React.useCallback((uuid: string) => {
     innerSetCurrentTranslation(uuid);
-    setCurrentBookName(undefined);
   }, [innerSetCurrentTranslation, setCurrentBookName]);
 
   return (
@@ -61,12 +59,12 @@ export default function Navigator(props: DrawerContentComponentProps) {
             {...{availableTranslations, currentTranslation, setCurrentTranslation, setReady}}
           />
         )}
-        {ready && currentBible && (
+        {(ready && currentBible) && (
           <BookPicker
-            {...{currentTranslationBooks, currentBook: currentBookName, setCurrentBook: setCurrentBookName}}
+            {...{currentTranslationBooks, currentBook: currentBookIndex, setCurrentBook: setCurrentBookName}}
           />
         )}
-        {ready && currentBookName && (
+        {ready && (
           <View style={{
             height: 100,
           }}>
@@ -75,16 +73,16 @@ export default function Navigator(props: DrawerContentComponentProps) {
               flexDirection: 'row',
               justifyContent: 'space-between'
             }}>
-              {currentBook && (<View style={{ width: '49%' }}><ChapterPicker
+              <View style={{ width: '49%' }}><ChapterPicker
                 {...{currentBook, currentChapter: currentChapterIndex, setCurrentChapter: setCurrentChapterIndex}}
-              /></View>)}
-              {currentChapter && (<View style={{ width: '49%' }}><VersePicker
+              /></View>
+              <View style={{ width: '49%' }}><VersePicker
                 {...{currentChapter, currentVerseIndex, setCurrentVerseIndex}}
-              /></View>)}
+              /></View>
             </View>
           </View>
         )}
-        {(!!currentTranslation && !!currentBookName) && <Button buttonStyle={{
+        {currentTranslation && (<Button buttonStyle={{
           padding: 20,
           marginTop: 10,
         }} type={darkTheme ? 'outline' : 'solid'} titleStyle={{
@@ -93,7 +91,7 @@ export default function Navigator(props: DrawerContentComponentProps) {
           if (currentChapter) {
             props.navigation.jumpTo('Bible reader')
           }
-        }} />}
+        }} />)}
       </View>
     </BaseView>
   );

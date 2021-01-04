@@ -7,8 +7,8 @@ import { Book } from '../types/apiTypes';
 
 type BookPickerProps = {
   currentTranslationBooks: Book[],
-  currentBook: string | undefined,
-  setCurrentBook(book: string): void;
+  currentBook: number,
+  setCurrentBook(book: number): void;
 };
 
 export default function BookPicker(props: BookPickerProps) {
@@ -31,16 +31,15 @@ export default function BookPicker(props: BookPickerProps) {
       >
         <Picker
           selectedValue={props.currentBook}
-          onValueChange={async (itemValue) => {
+          onValueChange={async (itemValue: number) => {
             props.setCurrentBook(itemValue);
-            const book = props.currentTranslationBooks.find(v => v.title === itemValue);
-            if (book) {
-              dispatch(BibleStateActions.setBook(book.title));
+            if (itemValue > 0 && itemValue < props.currentTranslationBooks.length) {
+              dispatch(BibleStateActions.setBook(itemValue));
             }
           }}
         >
-          {props.currentTranslationBooks.map((item) => (
-            <Picker.Item key={item.title} label={item.title} value={item.title} />
+          {props.currentTranslationBooks.map((item, index) => (
+            <Picker.Item key={index} label={item.title} value={index} />
           ))}
         </Picker>
       </View>

@@ -1,10 +1,9 @@
 import * as React from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { Picker, View } from 'react-native';
 import { Text } from 'react-native-elements';
 import { BibleStateActions } from '../reducers/BibleState.reducer';
-import { loadBible, LocalBiblesListItem } from '../util/offlinePersistence';
-import { State } from '../types/reduxTypes';
+import { LocalBiblesListItem } from '../util/offlinePersistence';
 
 type TranslationPickerProps = {
   availableTranslations: LocalBiblesListItem[];
@@ -14,7 +13,6 @@ type TranslationPickerProps = {
 };
 
 export default function TranslationPicker(props: TranslationPickerProps) {
-  const darkTheme = useSelector<State, boolean>(state => state.config.darkTheme);
   const dispatch = useDispatch();
 
   return (
@@ -40,6 +38,7 @@ export default function TranslationPicker(props: TranslationPickerProps) {
           onValueChange={async (itemValue: string) => {
             props.setReady(false);
             props.setCurrentTranslation(itemValue);
+            console.log(itemValue);
             const bible = props.availableTranslations.find(v => v.uuid === itemValue);
             if (bible) {
               dispatch(BibleStateActions.setBible(bible));

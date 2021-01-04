@@ -6,7 +6,7 @@ export type State = {
 };
 
 export type BibleReference = {
-  book: string;
+  book: number;
   chapterIndex: number;
   verseIndex: number | undefined;
 };
