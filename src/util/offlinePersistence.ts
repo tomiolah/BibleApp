@@ -14,21 +14,28 @@ const BIBLE_LIST_FILE = `${FileSystem.documentDirectory}localBibles.json`;
 const STATE_FILE = `${FileSystem.documentDirectory}state.json`;
 
 export const saveBible = async (bible: Bible) => {
-  await FileSystem.writeAsStringAsync(BIBLE_DIRECTORY(bible.uuid), JSON.stringify(bible));
-  let newLocalBibles = await localBibles();
-  await FileSystem.writeAsStringAsync(BIBLE_LIST_FILE, JSON.stringify([
-    ...newLocalBibles,
-    { uuid: bible.uuid, name: bible.name, shortName: bible.shortName },
-  ]));
+  let localBiblesLoad = await localBibles();
+  if (
+    !localBiblesLoad.map(l => l.uuid).includes(bible.uuid) &&
+    !localBiblesLoad.map(l => l.name).includes(bible.name)
+  ) {
+    await FileSystem.writeAsStringAsync(BIBLE_DIRECTORY(bible.uuid), JSON.stringify(bible));
+    let newLocalBibles = [
+      ...localBiblesLoad,
+      { uuid: bible.uuid, name: bible.name, shortName: bible.shortName },
+    ];
+    await FileSystem.writeAsStringAsync(BIBLE_LIST_FILE, JSON.stringify(newLocalBibles));
+  }
   return BIBLE_DIRECTORY(bible.uuid);
 }
 
 export const removeBible = async (uuid: string) => {
-  await FileSystem.deleteAsync(BIBLE_DIRECTORY(uuid));
-  let newLocalBibles = await localBibles();
-  await FileSystem.writeAsStringAsync(BIBLE_LIST_FILE, JSON.stringify(
-    newLocalBibles.filter(v => v.uuid !== uuid)
-  ));
+  let localBiblesLoad = await localBibles();
+  if (localBiblesLoad.map(l => l.uuid).includes(uuid)) {
+    await FileSystem.deleteAsync(BIBLE_DIRECTORY(uuid));
+    let newLocalBibles = localBiblesLoad.filter(v => v.uuid !== uuid);
+    await FileSystem.writeAsStringAsync(BIBLE_LIST_FILE, JSON.stringify(newLocalBibles));
+  }
 }
 
 export const localBibles = async (): Promise<LocalBiblesListItem[]> => {

@@ -76,7 +76,6 @@ export default function BibleView(props: DrawerContentComponentProps) {
   const currentBible = useSelector<State, LocalBiblesListItem | undefined>(state => state.BibleState.currentBible);
   const loadedBible = useAsyncData(loadBible(currentBible?.uuid ?? ''), [currentBible]);
   const currentBook = React.useMemo(() => {
-    console.log(loadedBible?.name);
     const lbb = loadedBible?.books ?? []
     if (lbb.length > 0) {
       return lbb[reference?.book ?? 0];

@@ -38,7 +38,6 @@ export default function TranslationPicker(props: TranslationPickerProps) {
           onValueChange={async (itemValue: string) => {
             props.setReady(false);
             props.setCurrentTranslation(itemValue);
-            console.log(itemValue);
             const bible = props.availableTranslations.find(v => v.uuid === itemValue);
             if (bible) {
               dispatch(BibleStateActions.setBible(bible));
@@ -46,7 +45,7 @@ export default function TranslationPicker(props: TranslationPickerProps) {
             }
           }}
         >
-          {props.availableTranslations.map(translation => (
+          {Array.from(new Set(props.availableTranslations)).map(translation => (
             <Picker.Item key={translation.uuid} label={`${translation.name} (${translation.shortName})`} value={translation.uuid} />
           ))}
         </Picker>
